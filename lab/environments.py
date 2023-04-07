@@ -484,3 +484,9 @@ class TetralithEnvironment(SlurmEnvironment):
     def is_present(cls):
         node = platform.node()
         return re.match(r"tetralith\d+\.nsc\.liu\.se|n\d+", node)
+
+
+class UnhAiSlurmEnvironment(SlurmEnvironment):
+    """Environemnt for UNH's AI group."""
+
+    pass
