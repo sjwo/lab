@@ -489,4 +489,18 @@ class TetralithEnvironment(SlurmEnvironment):
 class UnhAiSlurmEnvironment(SlurmEnvironment):
     """Environemnt for UNH's AI group."""
 
-    pass
+    # Must be overridden in derived classes.
+    JOB_HEADER_TEMPLATE_FILE = "unh-ai-slurm-job-header"
+    RUN_JOB_BODY_TEMPLATE_FILE = None # "unh-ai-slurm-run-job-body"
+    STEP_JOB_BODY_TEMPLATE_FILE = None # "unh-ai-slurm-step-job-body"
+    MAX_TASKS: int = 50000 - 1 # Value between 1 and MaxArraySize-1 (from slurm.conf).
+    DEFAULT_PARTITION = "compute"
+    # We assume only one algorithm running at a single time on each node:
+    DEFAULT_MEMORY_PER_CPU = "63G"
+
+    # if email not specified at construction, and if "~/email" exists, we assume the file is one line file containing valid email address
+    if self.email is None:
+        user_email_file = os.path.expanduser("~/email")
+        if os.path.isfile(user_email_file):
+            with open(user_email_file) as f:
+                self.email = f.readline().strip()
