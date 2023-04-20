@@ -391,7 +391,9 @@ class SlurmEnvironment(Environment):
             job_name = self._get_job_name(step)
             job_file = os.path.join(job_dir, job_name)
             job_content = self._get_job(step, is_last=(step == steps[-1]))
+            logging.info(f"DEBUG: job_content:\n{job_content}")
             tools.write_file(job_file, job_content)
+            logging.info(f"DEBUG: wrote job_content to job_file '{job_file}'")
             prev_job_id = self._submit_job(
                 job_name, job_file, job_dir, dependency=prev_job_id
             )
@@ -433,6 +435,7 @@ class SlurmEnvironment(Environment):
         return job_params
 
     def _submit_job(self, job_name, job_file, job_dir, dependency=None):
+        logging.info(f"DEBUG: _submit_job:\n\tjob_name: {job_name}\n\tjob_file: {job_file}\n\tjob_dir: {job_dir}\n\tdepedency: {dependency}")
         submit = ["sbatch"]
         if self.export:
             submit += ["--export", ",".join(self.export)]
@@ -491,11 +494,12 @@ class UnhAiSlurmEnvironment(SlurmEnvironment):
 
     DEFAULT_PARTITION = "compute"
     # We assume only one algorithm running at a single time on each node:
-    DEFAULT_MEMORY = "63G"
+    DEFAULT_MEMORY = "62G"
     MAX_TASKS: int = 50000 - 1  # Value between 1 and MaxArraySize-1 (from slurm.conf).
     JOB_HEADER_TEMPLATE_FILE = "unh-ai-slurm-job-header"
     RUN_JOB_BODY_TEMPLATE_FILE = "slurm-run-job-body"
     STEP_JOB_BODY_TEMPLATE_FILE = "slurm-step-job-body"
+    DEFAULT_RANDOMIZE_TASK_ORDER = False
 
     def __init__(
         self,
@@ -504,10 +508,11 @@ class UnhAiSlurmEnvironment(SlurmEnvironment):
         partition=DEFAULT_PARTITION,
         qos=None,
         # Inherited default is no time limit
-        time_limit_per_task=DEFAULT_TIME_LIMIT_PER_TASK,
+        time_limit_per_task=SlurmEnvironment.DEFAULT_TIME_LIMIT_PER_TASK,
         memory=DEFAULT_MEMORY,
-        export=DEFAULT_EXPORT,
-        setup=DEFAULT_SETUP,
+        export=SlurmEnvironment.DEFAULT_EXPORT,
+        setup=SlurmEnvironment.DEFAULT_SETUP,
+        randomize_task_order=DEFAULT_RANDOMIZE_TASK_ORDER,
         **kwargs,
     ):
         # if email not specified at construction, and if "~/email" exists, we assume the file is one line file containing valid email address
@@ -527,6 +532,7 @@ class UnhAiSlurmEnvironment(SlurmEnvironment):
         self.memory = memory
         self.export = export
         self.setup = setup
+        self.randomize_task_order = randomize_task_order
 
     def _get_job_params(self, step, is_last):
         job_params = {
@@ -544,8 +550,7 @@ class UnhAiSlurmEnvironment(SlurmEnvironment):
         job_params["partition"] = self.partition
         job_params["time_limit_per_task"] = self.time_limit_per_task
         job_params["memory"] = self.memory
-        # Could do this if worried about Slurm's cgroups-based memory limit failing
-        # job_params["soft_memory_limit"] = self.memory
+        job_params["environment_setup"] = self.setup
 
         if is_last and self.email:
             job_params["mailtype"] = "ALL"
