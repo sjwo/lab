@@ -489,18 +489,74 @@ class TetralithEnvironment(SlurmEnvironment):
 class UnhAiSlurmEnvironment(SlurmEnvironment):
     """Environemnt for UNH's AI group."""
 
-    # Must be overridden in derived classes.
-    JOB_HEADER_TEMPLATE_FILE = "unh-ai-slurm-job-header"
-    RUN_JOB_BODY_TEMPLATE_FILE = None # "unh-ai-slurm-run-job-body"
-    STEP_JOB_BODY_TEMPLATE_FILE = None # "unh-ai-slurm-step-job-body"
-    MAX_TASKS: int = 50000 - 1 # Value between 1 and MaxArraySize-1 (from slurm.conf).
     DEFAULT_PARTITION = "compute"
     # We assume only one algorithm running at a single time on each node:
-    DEFAULT_MEMORY_PER_CPU = "63G"
+    DEFAULT_MEMORY = "63G"
+    MAX_TASKS: int = 50000 - 1  # Value between 1 and MaxArraySize-1 (from slurm.conf).
+    JOB_HEADER_TEMPLATE_FILE = "unh-ai-slurm-job-header"
+    RUN_JOB_BODY_TEMPLATE_FILE = None  # "unh-ai-slurm-run-job-body"
+    STEP_JOB_BODY_TEMPLATE_FILE = None  # "unh-ai-slurm-step-job-body"
 
-    # if email not specified at construction, and if "~/email" exists, we assume the file is one line file containing valid email address
-    if self.email is None:
-        user_email_file = os.path.expanduser("~/email")
-        if os.path.isfile(user_email_file):
-            with open(user_email_file) as f:
-                self.email = f.readline().strip()
+    def __init__(
+        self,
+        email=None,
+        extra_options=None,
+        partition=None,
+        qos=None,
+        time_limit_per_task=None,
+        memory=None,
+        export=None,
+        setup=None,
+        **kwargs,
+    ):
+        # if email not specified at construction, and if "~/email" exists, we assume the file is one line file containing valid email address
+        if email is None:
+            user_email_file = os.path.expanduser("~/email")
+            if os.path.isfile(user_email_file):
+                with open(user_email_file) as f:
+                    self.email = f.readline().strip()
+            else:
+                self.email = None
+        else:
+            self.email = email
+        self.extra_options = extra_options or "## (not used)"
+
+        if partition is None:
+            partition = self.DEFAULT_PARTITION
+        # Inherited default is no time limit
+        if time_limit_per_task is None:
+            time_limit_per_task = self.DEFAULT_TIME_LIMIT_PER_TASK
+        if memory is None:
+            memory = self.DEFAULT_MEMORY
+        if export is None:
+            export = self.DEFAULT_EXPORT
+        if setup is None:
+            setup = self.DEFAULT_SETUP
+
+    def _get_job_params(self, step, is_last):
+        job_params = {
+            "errfile": "driver.err",
+            "extra_options": self.extra_options,
+            "logfile": "driver.log",
+            "name": self._get_job_name(step),
+            "num_tasks": self._get_num_tasks(step),
+        }
+
+        # Don't mangle logs (we'll clean up the many files later)
+        job_params["logfile"] = "slurm-%A-%a.log"
+        job_params["errfile"] = "slurm-%A-%a.err"
+
+        job_params["partition"] = self.partition
+        job_params["time_limit_per_task"] = self.time_limit_per_task
+        job_params["memory"] = self.memory
+        # Could do this if worried about Slurm's cgroups-based memory limit failing
+        # job_params["soft_memory_limit"] = self.memory
+
+        if is_last and self.email:
+            job_params["mailtype"] = "ALL"
+            job_params["mailuser"] = self.email
+        else:
+            job_params["mailtype"] = "NONE"
+            job_params["mailuser"] = ""
+
+        return job_params

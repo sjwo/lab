@@ -11,9 +11,7 @@
 ### Set wall-clock time limit per task.
 #SBATCH --time=%(time_limit_per_task)s
 ### Set memory limit.
-#SBATCH --mem-per-cpu=%(memory_per_cpu)s
-### Set number of cores per task.
-#SBATCH --cpus-per-task=%(cpus_per_task)s
+#SBATCH --mem=%(memory)s
 ### Number of tasks in array job.
 #SBATCH --array=1-%(num_tasks)d
 ### Send mail? Mail type can be e.g. NONE, END, FAIL, ARRAY_TASKS.
