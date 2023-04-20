@@ -494,19 +494,20 @@ class UnhAiSlurmEnvironment(SlurmEnvironment):
     DEFAULT_MEMORY = "63G"
     MAX_TASKS: int = 50000 - 1  # Value between 1 and MaxArraySize-1 (from slurm.conf).
     JOB_HEADER_TEMPLATE_FILE = "unh-ai-slurm-job-header"
-    RUN_JOB_BODY_TEMPLATE_FILE = None  # "unh-ai-slurm-run-job-body"
-    STEP_JOB_BODY_TEMPLATE_FILE = None  # "unh-ai-slurm-step-job-body"
+    RUN_JOB_BODY_TEMPLATE_FILE = "slurm-run-job-body"
+    STEP_JOB_BODY_TEMPLATE_FILE = "slurm-step-job-body"
 
     def __init__(
         self,
         email=None,
         extra_options=None,
-        partition=None,
+        partition=DEFAULT_PARTITION,
         qos=None,
-        time_limit_per_task=None,
-        memory=None,
-        export=None,
-        setup=None,
+        # Inherited default is no time limit
+        time_limit_per_task=DEFAULT_TIME_LIMIT_PER_TASK,
+        memory=DEFAULT_MEMORY,
+        export=DEFAULT_EXPORT,
+        setup=DEFAULT_SETUP,
         **kwargs,
     ):
         # if email not specified at construction, and if "~/email" exists, we assume the file is one line file containing valid email address
@@ -520,18 +521,12 @@ class UnhAiSlurmEnvironment(SlurmEnvironment):
         else:
             self.email = email
         self.extra_options = extra_options or "## (not used)"
-
-        if partition is None:
-            partition = self.DEFAULT_PARTITION
-        # Inherited default is no time limit
-        if time_limit_per_task is None:
-            time_limit_per_task = self.DEFAULT_TIME_LIMIT_PER_TASK
-        if memory is None:
-            memory = self.DEFAULT_MEMORY
-        if export is None:
-            export = self.DEFAULT_EXPORT
-        if setup is None:
-            setup = self.DEFAULT_SETUP
+        self.partition = partition
+        self.qos = qos
+        self.time_limit_per_task = time_limit_per_task
+        self.memory = memory
+        self.export = export
+        self.setup = setup
 
     def _get_job_params(self, step, is_last):
         job_params = {
