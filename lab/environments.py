@@ -493,7 +493,10 @@ class UnhAiSlurmEnvironment(SlurmEnvironment):
     """Environemnt for UNH's AI group."""
 
     DEFAULT_PARTITION = "compute"
-    # We assume only one algorithm running at a single time on each node:
+    # We assume only one algorithm running at a single time on each node.
+    # Each UNH AI node has 64G RAM (as of Fall 2022); however, specifying 63G here
+    # causes "sbatch: error: Memory specification can not be satisfied," while 62G
+    # works fine.
     DEFAULT_MEMORY = "62G"
     MAX_TASKS: int = 50000 - 1  # Value between 1 and MaxArraySize-1 (from slurm.conf).
     JOB_HEADER_TEMPLATE_FILE = "unh-ai-slurm-job-header"
