@@ -496,3 +496,12 @@ class TetralithEnvironment(SlurmEnvironment):
     def is_present(cls):
         node = platform.node()
         return re.match(r"tetralith\d+\.nsc\.liu\.se|n\d+", node)
+
+
+class UnhSlurmEnvironment(SlurmEnvironment):
+    DEFAULT_PARTITION = "compute"
+    # TODO propagate these to Slurm (sbatch?) submission
+    DEFAULT_COMMANDS_PER_CELL = 5
+    DEFAULT_MEMORY_PER_CPU = 62
+    NO_KILL = True
+    N_TASKS = 1
