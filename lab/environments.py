@@ -427,6 +427,9 @@ class SlurmEnvironment(Environment):
         job_params["qos"] = self.qos
         job_params["time_limit_per_task"] = self.time_limit_per_task
         job_params["memory_per_cpu"] = self.memory_per_cpu
+        # Accommodates UnhSlurmEnvironment
+        if "real_memory_required_per_node" in dir(self):
+            job_params["real_memory_required_per_node"] = self.real_memory_required_per_node
         job_params["cpus_per_task"] = self.cpus_per_task
         memory_per_cpu_kb = SlurmEnvironment._get_memory_in_kb(self.memory_per_cpu)
         job_params["soft_memory_limit"] = int(
@@ -499,6 +502,9 @@ class TetralithEnvironment(SlurmEnvironment):
 
 
 class UnhSlurmEnvironment(SlurmEnvironment):
+    """
+    WARNING: Several `sbatch` options in `SlurmEnvironment` are ignored by `UnhSlurmEnvironment`; see `data/unh-ai-slurm-job-header.template` for which are actually used.
+    """
     DEFAULT_PARTITION = "compute"
     # TODO propagate these to Slurm (sbatch?) submission
     DEFAULT_COMMANDS_PER_CELL = 5
@@ -507,3 +513,17 @@ class UnhSlurmEnvironment(SlurmEnvironment):
     N_TASKS = 1
     MAX_TASKS = 50000 - 1 # `MaxArraySize=50000` from ai0:/etc/slurm/slurm.conf
     JOB_HEADER_TEMPLATE_FILE = "unh-ai-slurm-job-header"
+
+    def __init__(self, real_memory_required_per_node="62G", **kwargs):
+        super().__init__(**kwargs)
+
+        # This will be passed as the argument to the `--mem` SBATCH directive.
+        self.real_memory_required_per_node = real_memory_required_per_node
+
+        # Since the UNH AI slurm job header template does not include this
+        # variable, it will ultimately be ignored. However,
+        # SlurmEnvironment._get_job_params() nonetheless will attempt to parse
+        # it with _get_memory_in_kb, so we need a parsable value here to avoid
+        # an exception.
+        self.memory_per_cpu = "1G"
+        logging.warning("\tSeveral `sbatch` options in `SlurmEnvironment` are ignored by `UnhSlurmEnvironment`; see `data/unh-ai-slurm-job-header.template` for which are actually used.\n")

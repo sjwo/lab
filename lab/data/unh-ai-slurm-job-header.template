@@ -8,18 +8,10 @@
 #SBATCH --open-mode=append
 ### Set partition.
 #SBATCH --partition=%(partition)s
-### Set quality-of-service group.
-#SBATCH --qos=%(qos)s
-### Set wall-clock time limit per task.
-#SBATCH --time=%(time_limit_per_task)s
 ### Set memory limit.
-#SBATCH --mem-per-cpu=%(memory_per_cpu)s
-### Set number of cores per task.
-#SBATCH --cpus-per-task=%(cpus_per_task)s
+#SBATCH --mem=%(real_memory_required_per_node)s
 ### Number of tasks in array job.
 #SBATCH --array=1-%(num_tasks)d
-### Adjustment to priority ([-2147483645, 2147483645]).
-#SBATCH --nice=%(nice)s
 ### Send mail? Mail type can be e.g. NONE, END, FAIL, ARRAY_TASKS.
 #SBATCH --mail-type=%(mailtype)s
 #SBATCH --mail-user=%(mailuser)s
