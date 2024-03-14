@@ -502,7 +502,8 @@ class UnhSlurmEnvironment(SlurmEnvironment):
     DEFAULT_PARTITION = "compute"
     # TODO propagate these to Slurm (sbatch?) submission
     DEFAULT_COMMANDS_PER_CELL = 5
-    DEFAULT_MEMORY_PER_CPU = "62G"
+    DEFAULT_MEMORY_LIMIT = "62G" # != mem-per-cpu!!!!
     NO_KILL = True
     N_TASKS = 1
     MAX_TASKS = 50000 - 1 # `MaxArraySize=50000` from ai0:/etc/slurm/slurm.conf
+    JOB_HEADER_TEMPLATE_FILE = "unh-ai-slurm-job-header"
