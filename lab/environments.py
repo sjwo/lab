@@ -438,8 +438,8 @@ class SlurmEnvironment(Environment):
         job_params["nice"] = self.NICE_VALUE if is_run_step(step) else 0
         job_params["environment_setup"] = self.setup
 
-        if is_last and self.email:
-            job_params["mailtype"] = "END,FAIL,REQUEUE,STAGE_OUT"
+        if self.email:
+            job_params["mailtype"] = "ALL"
             job_params["mailuser"] = self.email
         else:
             job_params["mailtype"] = "NONE"
