@@ -506,15 +506,14 @@ class UnhSlurmEnvironment(SlurmEnvironment):
     WARNING: Several `sbatch` options in `SlurmEnvironment` are ignored by `UnhSlurmEnvironment`; see `data/unh-ai-slurm-job-header.template` for which are actually used.
     """
     DEFAULT_PARTITION = "compute"
-    # TODO propagate these to Slurm (sbatch?) submission
-    DEFAULT_COMMANDS_PER_CELL = 5
     DEFAULT_MEMORY_LIMIT = "62G" # != mem-per-cpu!!!!
-    NO_KILL = True
     N_TASKS = 1
     MAX_TASKS = 50000 - 1 # `MaxArraySize=50000` from ai0:/etc/slurm/slurm.conf
     JOB_HEADER_TEMPLATE_FILE = "unh-ai-slurm-job-header"
 
-    def __init__(self, real_memory_required_per_node="62G", **kwargs):
+    extra_options = f"#SBATCH --no-kill\n#SBATCH --ntasks={N_TASKS}"
+
+    def __init__(self, real_memory_required_per_node=DEFAULT_MEMORY_LIMIT, extra_options=extra_options, **kwargs):
         super().__init__(**kwargs)
 
         # This will be passed as the argument to the `--mem` SBATCH directive.
